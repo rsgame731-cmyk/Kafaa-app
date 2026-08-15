@@ -10,6 +10,7 @@
     "dev": "vite",
     "server": "tsx server/src/index.ts",
     "start": "tsx server/src/index.ts",
+    "postinstall": "prisma generate --schema=server/prisma/schema.prisma",
     "build": "tsc && vite build",
     "lint": "tsc --noEmit",
     "preview": "vite preview",
