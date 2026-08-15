@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
-import { LanguageProvider, useLanguage } from './context/LanguageContext';
+import { LanguageProvider } from './context/LanguageContext';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
 
@@ -23,6 +23,54 @@ import { SearchView } from './views/SearchView';
 import { NotificationsView } from './views/NotificationsView';
 import { SettingsView } from './views/SettingsView';
 import { AdminView } from './views/AdminView';
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  public state: ErrorBoundaryState = {
+    hasError: false,
+    error: null
+  };
+
+  public static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error('Kafa\'a React ErrorBoundary caught an error:', error, errorInfo);
+  }
+
+  public render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#0a0a0c] text-white flex flex-col items-center justify-center p-6 text-center">
+          <div className="w-16 h-16 bg-red-500/20 text-red-400 rounded-full flex items-center justify-center text-3xl font-bold mb-4 border border-red-500/40">
+            ⚠️
+          </div>
+          <h1 className="text-2xl font-bold mb-2">Something went wrong</h1>
+          <p className="text-gray-400 max-w-md mb-6 text-sm">
+            {this.state.error?.message || 'An unexpected rendering error occurred.'}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-black font-semibold rounded-xl transition-all shadow-lg"
+          >
+            Reload Application
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const MainContent: React.FC = () => {
   const { activeTab, deviceViewMode } = useApp();
@@ -72,15 +120,11 @@ const MainContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-brand-dark text-brand-cream selection:bg-brand-bronze selection:text-brand-dark">
-      {/* Top Header */}
       <Header />
-
-      {/* Main Container Viewport */}
       <main className="w-full">
         {deviceViewMode === 'mobile' ? (
           <div className="py-6 px-2 flex justify-center bg-[#0a0a0c]">
             <div className="w-full max-w-[390px] min-h-[844px] bg-brand-dark border-4 border-brand-border/80 rounded-[40px] shadow-2xl overflow-hidden relative pb-12 my-2">
-              {/* Speaker / Notch simulator */}
               <div className="w-28 h-4 bg-brand-surface rounded-b-xl mx-auto mb-2 border-b border-brand-border/40" />
               {renderActiveView()}
             </div>
@@ -91,8 +135,6 @@ const MainContent: React.FC = () => {
           </div>
         )}
       </main>
-
-      {/* Bottom Minimalist Navigation */}
       <BottomNav />
     </div>
   );
@@ -100,10 +142,12 @@ const MainContent: React.FC = () => {
 
 export const App: React.FC = () => {
   return (
-    <LanguageProvider>
-      <AppProvider>
-        <MainContent />
-      </AppProvider>
-    </LanguageProvider>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <AppProvider>
+          <MainContent />
+        </AppProvider>
+      </LanguageProvider>
+    </ErrorBoundary>
   );
 };
