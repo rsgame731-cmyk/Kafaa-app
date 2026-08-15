@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-dark: #101114;
+    --bg-surface: #181A1D;
+    --bg-elevated: #202226;
+    --color-bronze: #A96832;
+    --color-cream: #E8DED0;
+    --color-muted: #A7A19A;
+    --color-border: #282A2E;
+  }
+
+  body {
+    background-color: var(--bg-dark);
+    color: var(--color-cream);
+    font-family: 'Inter', 'Tajawal', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html[dir="rtl"] {
+    font-family: 'Tajawal', 'Cairo', system-ui, sans-serif;
+  }
+}
+
+/* Custom Luxury Dark Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #101114;
+}
+::-webkit-scrollbar-thumb {
+  background: #282A2E;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A96832;
+}
+
+/* RTL Support Utility Classes */
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* Smooth Transitions & Micro-Interactions */
+.transition-luxury {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.gold-gradient-text {
+  background: linear-gradient(135deg, #E8DED0 0%, #A96832 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.bronze-glow-hover:hover {
+  box-shadow: 0 0 25px rgba(169, 104, 50, 0.25);
+  border-color: rgba(169, 104, 50, 0.4);
+}

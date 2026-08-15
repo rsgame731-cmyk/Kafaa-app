@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - NODE_ENV=production
+      - CLIENT_URL=http://localhost:3000
+      - DATABASE_URL=postgresql://kafaa_user:kafaa_password@postgres:5432/kafaa_db?schema=public
+      - JWT_SECRET=kafaa_dev_super_secret_key_change_in_prod_2026_dz
+      - JWT_REFRESH_SECRET=kafaa_dev_refresh_secret_key_change_in_prod_2026_dz
+      - CORS_ORIGIN=http://localhost:3000
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: kafaa_user
+      POSTGRES_PASSWORD: kafaa_password
+      POSTGRES_DB: kafaa_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

@@ -1,0 +1,544 @@
+// Production Prisma Relational Schema for Kafa'a Algerian Professional Network — Supabase PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ----------------------------------------------------
+// USER & CORE SECURITY
+// ----------------------------------------------------
+
+model User {
+  id                String       @id @default(uuid())
+  username          String?      @unique
+  email             String       @unique
+  phone             String?      @unique
+  passwordHash      String
+  firstName         String?
+  lastName          String?
+  avatar            String?
+  status            String       @default("ACTIVE")
+  role              String       @default("USER")
+  verified          Boolean      @default(false)
+  isAdmin           Boolean      @default(false)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  deletedAt         DateTime?
+
+  profile           Profile?
+  experiences       Experience[]
+  education         Education[]
+  userSkills        UserSkill[]
+  certifications    Certification[]
+  projects          Project[]
+  
+  posts             Post[]
+  comments          Comment[]
+  reactions         Reaction[]
+  savedPosts        SavedPost[]
+  
+  sentMessages      Message[]          @relation("SentMessages")
+  receivedMessages Message[]          @relation("ReceivedMessages")
+  conversationMembers ConversationMember[]
+  
+  sentConnections   Connection[]       @relation("SentConnections")
+  receivedConnections Connection[]     @relation("ReceivedConnections")
+  following         Follower[]         @relation("UserFollowing")
+  followers         Follower[]         @relation("UserFollowers")
+  
+  jobApplications   JobApplication[]
+  companyEmployees  CompanyEmployee[]
+  services          Service[]
+  proposals         Proposal[]
+  reviewsGiven      Review[]           @relation("ReviewsGiven")
+  
+  courseEnrollments CourseEnrollment[]
+  eventsOrganized   Event[]
+  notifications     Notification[]
+  reportsFiled      Report[]           @relation("ReportsFiled")
+  auditLogs         AuditLog[]
+
+  @@map("users")
+}
+
+model Profile {
+  id                  String   @id @default(uuid())
+  userId              String   @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName            String
+  headline            String
+  about               String?
+  wilaya              String   @default("Algiers")
+  city                String   @default("Bab Ezzouar")
+  country             String   @default("Algeria")
+  industry            String   @default("Technology")
+  availability        String   @default("Looking for new opportunities")
+  remoteAvailability  Boolean  @default(true)
+  website             String?
+  avatarUrl           String?
+  bannerUrl           String?
+  connectionsCount    Int      @default(0)
+  followersCount      Int      @default(0)
+  profileViews        Int      @default(0)
+  profileCompletion   Int      @default(68)
+  profileVisibility   String   @default("PUBLIC")
+  skills              String   @default("[]")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("profiles")
+}
+
+model Experience {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyName String
+  title       String
+  location    String
+  startDate   String
+  endDate     String
+  isCurrent   Boolean  @default(false)
+  description String
+  createdAt   DateTime @default(now())
+
+  @@map("experiences")
+}
+
+model Education {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  institution  String
+  degree       String
+  fieldOfStudy String
+  startYear    String
+  endYear      String
+  createdAt    DateTime @default(now())
+
+  @@map("educations")
+}
+
+model Skill {
+  id         String      @id @default(uuid())
+  name       String      @unique
+  category   String      @default("General")
+  userSkills UserSkill[]
+
+  @@map("skills")
+}
+
+model UserSkill {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skillId   String
+  skill     Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  level     String   @default("Intermediate")
+
+  @@unique([userId, skillId])
+  @@map("user_skills")
+}
+
+model Certification {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title         String
+  issuer        String
+  issueDate     String
+  credentialUrl String?
+  createdAt     DateTime @default(now())
+
+  @@map("certifications")
+}
+
+model Project {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  projectUrl  String?
+  tags        String   @default("[]")
+  createdAt   DateTime @default(now())
+
+  @@map("projects")
+}
+
+// ----------------------------------------------------
+// ENTERPRISE & RECRUITMENT
+// ----------------------------------------------------
+
+model Company {
+  id                 String            @id @default(uuid())
+  name               String            @unique
+  slug               String            @unique
+  description        String
+  logoUrl            String?
+  coverUrl           String?
+  industry           String
+  wilaya             String            @default("Algiers")
+  city               String            @default("Algiers")
+  website            String?
+  email              String?
+  phone              String?
+  companySize        String            @default("100-500")
+  foundedYear        String?
+  verificationStatus String            @default("VERIFIED")
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  employees          CompanyEmployee[]
+  jobs               Job[]
+
+  @@map("companies")
+}
+
+model CompanyEmployee {
+  id        String   @id @default(uuid())
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role      String   @default("MEMBER")
+  createdAt DateTime @default(now())
+
+  @@unique([companyId, userId])
+  @@map("company_employees")
+}
+
+model Job {
+  id              String           @id @default(uuid())
+  companyId       String
+  company         Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdBy       String?
+  title           String
+  description     String
+  employmentType  String           @default("FULL_TIME")
+  workMode        String           @default("HYBRID")
+  wilaya          String           @default("Algiers")
+  city            String           @default("Algiers")
+  salaryMin       Int
+  salaryMax       Int
+  currency        String           @default("DZD")
+  experienceLevel String           @default("Mid")
+  status          String           @default("ACTIVE")
+  requirements    String           @default("[]")
+  tags            String           @default("[]")
+  applicantsCount Int              @default(0)
+  postedAt        DateTime         @default(now())
+
+  applications    JobApplication[]
+
+  @@index([companyId])
+  @@index([wilaya])
+  @@index([status])
+  @@map("jobs")
+}
+
+model JobApplication {
+  id          String   @id @default(uuid())
+  jobId       String
+  job         Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cvUrl       String?
+  coverLetter String?
+  status      String   @default("APPLIED")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([jobId, userId])
+  @@map("job_applications")
+}
+
+// ----------------------------------------------------
+// SOCIAL ENGINE & NETWORK
+// ----------------------------------------------------
+
+model Connection {
+  id          String   @id @default(uuid())
+  requesterId String
+  requester   User     @relation("SentConnections", fields: [requesterId], references: [id], onDelete: Cascade)
+  receiverId  String
+  receiver    User     @relation("ReceivedConnections", fields: [receiverId], references: [id], onDelete: Cascade)
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+
+  @@unique([requesterId, receiverId])
+  @@map("connections")
+}
+
+model Follower {
+  id          String   @id @default(uuid())
+  followerId  String
+  follower    User     @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
+  followingId String
+  following   User     @relation("UserFollowers", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([followerId, followingId])
+  @@map("followers")
+}
+
+model Post {
+  id         String      @id @default(uuid())
+  authorId   String
+  author     User        @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content    String
+  imageUrl   String?
+  wilaya     String      @default("Algiers")
+  visibility String      @default("PUBLIC")
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  deletedAt  DateTime?
+
+  media      PostMedia[]
+  comments   Comment[]
+  reactions  Reaction[]
+  savedBy    SavedPost[]
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("posts")
+}
+
+model PostMedia {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  url       String
+  type      String   @default("IMAGE")
+  createdAt DateTime @default(now())
+
+  @@map("post_media")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content   String
+  parentId  String?
+  createdAt DateTime @default(now())
+
+  @@map("comments")
+}
+
+model Reaction {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   @default("LIKE")
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@map("reactions")
+}
+
+model SavedPost {
+  id        String   @id @default(uuid())
+  postId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([postId, userId])
+  @@map("saved_posts")
+}
+
+// ----------------------------------------------------
+// REAL-TIME MESSAGING
+// ----------------------------------------------------
+
+model Conversation {
+  id        String               @id @default(uuid())
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  members   ConversationMember[]
+  messages  Message[]
+
+  @@map("conversations")
+}
+
+model ConversationMember {
+  id             String       @id @default(uuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt       DateTime     @default(now())
+
+  @@unique([conversationId, userId])
+  @@map("conversation_members")
+}
+
+model Message {
+  id             String       @id @default(uuid())
+  conversationId String?
+  conversation   Conversation? @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  senderId       String
+  sender         User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId     String?
+  receiver       User?        @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  text           String
+  isRead         Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+
+  @@map("messages")
+}
+
+// ----------------------------------------------------
+// FREELANCING & MARKETPLACE
+// ----------------------------------------------------
+
+model Service {
+  id               String     @id @default(uuid())
+  providerId       String
+  provider         User       @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  title            String
+  category         String
+  startingPriceDZD Int
+  rating           Float      @default(5.0)
+  reviewsCount     Int        @default(0)
+  deliveryDays     Int        @default(5)
+  thumbnailUrl     String?
+  createdAt        DateTime   @default(now())
+
+  proposals        Proposal[]
+  reviews          Review[]
+
+  @@map("services")
+}
+
+model Proposal {
+  id          String   @id @default(uuid())
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  buyerId     String
+  buyer       User     @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  amountDZD   Int
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+
+  @@map("proposals")
+}
+
+model Review {
+  id          String   @id @default(uuid())
+  serviceId   String
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  reviewerId  String
+  reviewer    User     @relation("ReviewsGiven", fields: [reviewerId], references: [id], onDelete: Cascade)
+  rating      Int      @default(5)
+  comment     String
+  createdAt   DateTime @default(now())
+
+  @@unique([serviceId, reviewerId])
+  @@map("reviews")
+}
+
+// ----------------------------------------------------
+// ACADEMY & EVENTS
+// ----------------------------------------------------
+
+model Course {
+  id           String             @id @default(uuid())
+  title        String
+  category     String
+  instructor   String
+  duration     String
+  lessonsCount Int
+  level        String             @default("Intermediate")
+  thumbnailUrl String?
+  createdAt    DateTime           @default(now())
+
+  enrollments  CourseEnrollment[]
+
+  @@map("courses")
+}
+
+model CourseEnrollment {
+  id         String   @id @default(uuid())
+  courseId   String
+  course     Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  progress   Int      @default(0)
+  enrolledAt DateTime @default(now())
+
+  @@unique([courseId, userId])
+  @@map("course_enrollments")
+}
+
+model Event {
+  id          String   @id @default(uuid())
+  organizerId String
+  organizer   User     @relation(fields: [organizerId], references: [id], onDelete: Cascade)
+  title       String
+  description String
+  wilaya      String   @default("Algiers")
+  date        String
+  location    String
+  createdAt   DateTime @default(now())
+
+  @@map("events")
+}
+
+// ----------------------------------------------------
+// SECURITY, NOTIFICATIONS & GOVERNANCE
+// ----------------------------------------------------
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String
+  isRead    Boolean  @default(false)
+  data      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+model Report {
+  id         String   @id @default(uuid())
+  reporterId String
+  reporter   User     @relation("ReportsFiled", fields: [reporterId], references: [id], onDelete: Cascade)
+  entityType String
+  entityId   String
+  reason     String
+  status     String   @default("PENDING")
+  createdAt  DateTime @default(now())
+
+  @@map("reports")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  ipAddress String?
+  userAgent String?
+  metadata  String?
+  createdAt DateTime @default(now())
+
+  @@map("audit_logs")
+}
