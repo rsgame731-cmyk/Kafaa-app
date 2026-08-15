@@ -3,6 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "server": "tsx server/src/index.ts",
@@ -16,6 +19,7 @@
   "dependencies": {
     "@prisma/client": "^5.10.2",
     "@supabase/supabase-js": "^2.39.8",
+    "@types/ws": "^8.18.1",
     "argon2": "^0.40.1",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
@@ -29,6 +33,7 @@
     "react-dom": "^18.2.0",
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.7.5",
+    "ws": "^8.21.3",
     "zod": "^3.22.4"
   },
   "devDependencies": {
