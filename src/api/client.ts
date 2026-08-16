@@ -1,6 +1,25 @@
 // Production API Client with Automatic Authorization & Token Refresh
 const env = (import.meta as any).env || {};
-const API_BASE_URL = env.VITE_API_URL ? `${env.VITE_API_URL}/api` : 'http://localhost:4000/api';
+
+function resolveApiBaseUrl(): string {
+  const customUrl = env.VITE_API_URL?.trim();
+  if (customUrl) {
+    const clean = customUrl.replace(/\/+$/, '');
+    return clean.endsWith('/api') ? clean : `${clean}/api`;
+  }
+
+  if (typeof window !== 'undefined') {
+    const { hostname, port } = window.location;
+    // Local development
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:4000/api';
+    }
+  }
+
+  return '/api';
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 class ApiClient {
   private accessToken: string | null = null;
@@ -62,8 +81,11 @@ class ApiClient {
       }
 
       return data.data || data;
-    } catch (error) {
+    } catch (error: any) {
       console.warn(`[ApiClient Network Fallback] Server request to ${endpoint} failed:`, error);
+      if (error?.message === 'Failed to fetch' || error?.name === 'TypeError') {
+        throw new Error('Unable to connect to backend server. Please verify backend URL and CORS settings.');
+      }
       throw error;
     }
   }
