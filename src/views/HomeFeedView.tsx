@@ -1,21 +1,46 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '../components/Card';
 import { Avatar } from '../components/Avatar';
 import { Badge } from '../components/Badge';
+import { CommentDrawer } from '../components/CommentDrawer';
 import { useApp } from '../context/AppContext';
 import { useLanguage } from '../context/LanguageContext';
+import { Post } from '../types';
 import { Heart, MessageSquare, Repeat2, Bookmark, Share2, Sparkles, PlusCircle } from 'lucide-react';
 
 export const HomeFeedView: React.FC = () => {
-  const { user, posts, toggleLikePost, toggleSavePost, setIsCreateModalOpen, setActiveTab } = useApp();
+  const {
+    user,
+    posts,
+    toggleLikePost,
+    toggleSavePost,
+    setIsCreateModalOpen,
+    setActiveTab,
+    showToast,
+    getCommentsForPost,
+    addCommentToPost
+  } = useApp();
   const { t } = useLanguage();
 
+  const [activeCommentPost, setActiveCommentPost] = useState<Post | null>(null);
+  const [isCommentDrawerOpen, setIsCommentDrawerOpen] = useState(false);
+
+  const handleCreateClick = () => {
+    setActiveTab('create');
+    setIsCreateModalOpen(false);
+  };
+
+  const handleOpenComments = (post: Post) => {
+    setActiveCommentPost(post);
+    setIsCommentDrawerOpen(true);
+  };
+
   return (
-    <div className="py-6 px-4 max-w-md mx-auto space-y-5 animate-fade-in pb-24">
+    <div className="py-6 px-4 max-w-md mx-auto space-y-5 animate-view-transition pb-24">
       {/* Top Greeting & Status Pill */}
       <Card className="flex items-center justify-between p-4 bg-brand-surface border-brand-border">
         <div className="flex items-center gap-3">
-          <div className="cursor-pointer" onClick={() => setActiveTab('profile')}>
+          <div className="cursor-pointer btn-press" onClick={() => setActiveTab('profile')}>
             <Avatar src={user.avatar} alt={user.name} verified={user.verified} size="md" />
           </div>
           <div>
@@ -32,8 +57,8 @@ export const HomeFeedView: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="p-2.5 rounded-full bg-brand-bronze/10 text-brand-bronze border border-brand-bronze/30 hover:bg-brand-bronze/20 transition-colors"
+          onClick={handleCreateClick}
+          className="p-2.5 rounded-full bg-brand-bronze/10 text-brand-bronze border border-brand-bronze/30 hover:bg-brand-bronze/20 transition-all btn-press shadow-bronze-glow"
           title="Create Post"
         >
           <PlusCircle className="w-5 h-5" />
@@ -44,10 +69,10 @@ export const HomeFeedView: React.FC = () => {
       <Card
         hoverable
         onClick={() => setActiveTab('career_state')}
-        className="bg-brand-elevated border-brand-bronze/30 p-3.5 flex items-center justify-between"
+        className="bg-brand-elevated border-brand-bronze/30 p-3.5 flex items-center justify-between cursor-pointer btn-press"
       >
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-brand-bronze/15 text-brand-bronze flex items-center justify-center font-bold text-xs">
+          <div className="w-9 h-9 rounded-full bg-brand-bronze/15 text-brand-bronze flex items-center justify-center font-bold text-xs shadow-bronze-glow">
             {user.profileCompletion}%
           </div>
           <div>
@@ -61,7 +86,7 @@ export const HomeFeedView: React.FC = () => {
       {/* Feed Posts */}
       <div className="space-y-4">
         {posts.map((post) => (
-          <Card key={post.id} className="p-5 space-y-3.5 border-brand-border/80">
+          <Card key={post.id} className="p-5 space-y-3.5 border-brand-border/80 bronze-glow-hover">
             {/* Author Header */}
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
@@ -98,36 +123,55 @@ export const HomeFeedView: React.FC = () => {
             <div className="flex items-center justify-between pt-2 border-t border-brand-border/40 text-brand-muted text-xs">
               <button
                 onClick={() => toggleLikePost(post.id)}
-                className={`flex items-center gap-1.5 px-2 py-1 rounded-full hover:bg-brand-elevated transition-colors ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full hover:bg-brand-elevated transition-colors btn-press ${
                   post.isLiked ? 'text-brand-bronze font-semibold' : ''
                 }`}
               >
-                <Heart className={`w-4 h-4 ${post.isLiked ? 'fill-brand-bronze text-brand-bronze' : ''}`} />
+                <Heart className={`w-4 h-4 transition-all ${
+                  post.isLiked ? 'fill-brand-bronze text-brand-bronze animate-heart-pop' : ''
+                }`} />
                 <span>{post.likesCount}</span>
               </button>
 
-              <button className="flex items-center gap-1.5 px-2 py-1 rounded-full hover:bg-brand-elevated hover:text-brand-cream transition-colors">
-                <MessageSquare className="w-4 h-4" />
-                <span>{post.commentsCount}</span>
+              <button
+                onClick={() => handleOpenComments(post)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full hover:bg-brand-elevated hover:text-brand-cream transition-colors btn-press"
+              >
+                <MessageSquare className="w-4 h-4 text-brand-bronze" />
+                <span className="font-medium text-brand-cream">{post.commentsCount}</span>
               </button>
 
-              <button className="flex items-center gap-1.5 px-2 py-1 rounded-full hover:bg-brand-elevated hover:text-brand-cream transition-colors">
+              <button
+                onClick={() => showToast('Post reposted to your network profile', 'success')}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full hover:bg-brand-elevated hover:text-brand-cream transition-colors btn-press"
+              >
                 <Repeat2 className="w-4 h-4" />
                 <span>{post.repostsCount}</span>
               </button>
 
               <button
                 onClick={() => toggleSavePost(post.id)}
-                className={`p-1.5 rounded-full hover:bg-brand-elevated transition-colors ${
+                className={`p-1.5 rounded-full hover:bg-brand-elevated transition-colors btn-press ${
                   post.isSaved ? 'text-brand-bronze' : ''
                 }`}
               >
-                <Bookmark className={`w-4 h-4 ${post.isSaved ? 'fill-brand-bronze text-brand-bronze' : ''}`} />
+                <Bookmark className={`w-4 h-4 transition-transform ${post.isSaved ? 'fill-brand-bronze text-brand-bronze scale-110' : ''}`} />
               </button>
             </div>
           </Card>
         ))}
       </div>
+
+      {/* Comments Drawer Modal */}
+      <CommentDrawer
+        isOpen={isCommentDrawerOpen}
+        onClose={() => setIsCommentDrawerOpen(false)}
+        post={activeCommentPost}
+        comments={activeCommentPost ? getCommentsForPost(activeCommentPost.id) : []}
+        onAddComment={addCommentToPost}
+      />
     </div>
   );
 };
+
+

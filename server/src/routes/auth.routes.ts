@@ -1,14 +1,15 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { hashPassword, verifyPassword } from '../utils/password';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { authenticateJWT, AuthenticatedRequest } from '../middleware/auth.middleware';
 import { authRateLimiter } from '../middleware/rateLimit';
 import { validateRequest } from '../middleware/validate.middleware';
+import { supabaseAdmin } from '../config/supabase';
+import { logger } from '../utils/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const registerSchema = z.object({
   body: z.object({
@@ -33,8 +34,19 @@ const loginSchema = z.object({
 router.post('/register', validateRequest(registerSchema), async (req: Request, res: Response) => {
   try {
     const { email, password, fullName, headline, wilaya, city, role } = req.body;
+    const now = new Date().toISOString();
 
-    const existingUser = await prisma.user.findUnique({ where: { email } });
+    // Check if user already exists
+    const { data: existingUser, error: checkErr } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (checkErr && checkErr.code !== 'PGRST116') {
+      logger.error('Error checking existing user in Supabase', checkErr);
+    }
+
     if (existingUser) {
       return res.status(409).json({
         status: 'error',
@@ -44,29 +56,53 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
     }
 
     const passwordHash = await hashPassword(password);
+    const userId = randomUUID();
+    const profileId = randomUUID();
 
-    const newUser = await prisma.user.create({
-      data: {
+    // Create User record
+    const { data: newUser, error: userCreateErr } = await supabaseAdmin
+      .from('users')
+      .insert({
+        id: userId,
         email,
         passwordHash,
         role,
         verified: false,
         isAdmin: false,
-        profile: {
-          create: {
-            fullName,
-            headline: headline || `${role} @ ${wilaya}`,
-            title: `${role} in Algeria`,
-            wilaya,
-            city,
-            country: 'Algeria',
-            bio: 'Algerian professional member on Kafa\'a.',
-            skills: JSON.stringify(['Management', 'Professional'])
-          }
-        }
-      },
-      include: { profile: true }
-    });
+        status: 'ACTIVE',
+        createdAt: now,
+        updatedAt: now
+      })
+      .select()
+      .single();
+
+    if (userCreateErr) {
+      logger.error('Failed to create user in Supabase', userCreateErr);
+      return res.status(500).json({ status: 'error', message: 'Failed to create user account' });
+    }
+
+    // Create Profile record
+    const { data: newProfile, error: profileCreateErr } = await supabaseAdmin
+      .from('profiles')
+      .insert({
+        id: profileId,
+        userId,
+        fullName,
+        headline: headline || `${role} @ ${wilaya}`,
+        wilaya,
+        city,
+        country: 'Algeria',
+        about: 'Algerian professional member on Kafa\'a.',
+        skills: JSON.stringify(['Management', 'Professional']),
+        createdAt: now,
+        updatedAt: now
+      })
+      .select()
+      .single();
+
+    if (profileCreateErr) {
+      logger.error('Failed to create profile in Supabase', profileCreateErr);
+    }
 
     const tokenPayload = { userId: newUser.id, role: newUser.role, isAdmin: newUser.isAdmin };
     const accessToken = generateAccessToken(tokenPayload);
@@ -95,11 +131,18 @@ router.post('/register', validateRequest(registerSchema), async (req: Request, r
           email: newUser.email,
           role: newUser.role,
           verified: newUser.verified,
-          profile: newUser.profile
+          profile: newProfile || {
+            fullName,
+            headline: headline || `${role} @ ${wilaya}`,
+            wilaya,
+            city,
+            country: 'Algeria'
+          }
         }
       }
     });
   } catch (error) {
+    logger.error('Registration failed safely', error);
     return res.status(500).json({ status: 'error', message: 'Registration failed safely' });
   }
 });
@@ -109,12 +152,13 @@ router.post('/login', authRateLimiter, validateRequest(loginSchema), async (req:
   try {
     const { email, password } = req.body;
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: { profile: true }
-    });
+    const { data: user, error: userErr } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
 
-    if (!user) {
+    if (userErr || !user) {
       return res.status(401).json({
         status: 'error',
         code: 'INVALID_CREDENTIALS',
@@ -130,6 +174,12 @@ router.post('/login', authRateLimiter, validateRequest(loginSchema), async (req:
         message: 'Invalid email or password'
       });
     }
+
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('*')
+      .eq('userId', user.id)
+      .maybeSingle();
 
     const tokenPayload = { userId: user.id, role: user.role, isAdmin: user.isAdmin };
     const accessToken = generateAccessToken(tokenPayload);
@@ -158,11 +208,12 @@ router.post('/login', authRateLimiter, validateRequest(loginSchema), async (req:
           email: user.email,
           role: user.role,
           verified: user.verified,
-          profile: user.profile
+          profile: profile || null
         }
       }
     });
   } catch (error) {
+    logger.error('Authentication failed in login', error);
     return res.status(500).json({ status: 'error', message: 'Authentication failed' });
   }
 });
@@ -209,14 +260,23 @@ router.post('/logout', (req: Request, res: Response) => {
 // 5. GET CURRENT USER (Protected)
 router.get('/me', authenticateJWT, async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.user!.userId },
-      include: { profile: true, experiences: true, education: true }
-    });
+    const userId = req.user!.userId;
 
-    if (!user) {
-      return res.status(444).json({ status: 'error', message: 'User not found' });
+    const { data: user, error: userErr } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (userErr || !user) {
+      return res.status(404).json({ status: 'error', message: 'User not found' });
     }
+
+    const [profileRes, expRes, eduRes] = await Promise.all([
+      supabaseAdmin.from('profiles').select('*').eq('userId', userId).maybeSingle(),
+      supabaseAdmin.from('experiences').select('*').eq('userId', userId),
+      supabaseAdmin.from('educations').select('*').eq('userId', userId)
+    ]);
 
     return res.json({
       status: 'success',
@@ -226,12 +286,13 @@ router.get('/me', authenticateJWT, async (req: AuthenticatedRequest, res: Respon
         role: user.role,
         verified: user.verified,
         isAdmin: user.isAdmin,
-        profile: user.profile,
-        experiences: user.experiences,
-        education: user.education
+        profile: profileRes.data || null,
+        experiences: expRes.data || [],
+        education: eduRes.data || []
       }
     });
   } catch (error) {
+    logger.error('Failed to fetch me user data', error);
     return res.status(500).json({ status: 'error', message: 'Failed to fetch user data' });
   }
 });

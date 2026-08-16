@@ -7,10 +7,13 @@ const envSchema = z.object({
   PORT: z.string().default('4000'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   CLIENT_URL: z.string().default('http://localhost:3000'),
-  DATABASE_URL: z.string().default('postgresql://postgres.namyvyecysndjqzmlvpb:Slimane055%40@db.namyvyecysndjqzmlvpb.supabase.co:5432/postgres'),
-  JWT_SECRET: z.string().default('kafaa_dev_super_secret_key_change_in_prod_2026_dz'),
-  JWT_REFRESH_SECRET: z.string().default('kafaa_dev_refresh_secret_key_change_in_prod_2026_dz'),
-  CORS_ORIGIN: z.string().default('*')
+  // DATABASE_URL must be set in .env — no default to avoid committing credentials
+  DATABASE_URL: z.string({ required_error: 'DATABASE_URL environment variable is required' }),
+  DIRECT_URL: z.string().optional(),
+  // JWT secrets must be set in .env — no default to avoid committing secrets
+  JWT_SECRET: z.string({ required_error: 'JWT_SECRET environment variable is required' }),
+  JWT_REFRESH_SECRET: z.string({ required_error: 'JWT_REFRESH_SECRET environment variable is required' }),
+  CORS_ORIGIN: z.string().default('http://localhost:3000')
 });
 
 export const env = envSchema.parse(process.env);

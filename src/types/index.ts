@@ -114,6 +114,18 @@ export interface Company {
   jobsCount: number;
 }
 
+export interface CommentItem {
+  id: string;
+  postId: string;
+  authorId: string;
+  authorName: string;
+  authorTitle: string;
+  authorAvatar: string;
+  authorVerified?: boolean;
+  content: string;
+  createdAt: string;
+}
+
 export interface Post {
   id: string;
   authorId: string;
@@ -130,6 +142,7 @@ export interface Post {
   postedAt: string;
   isLiked?: boolean;
   isSaved?: boolean;
+  commentsList?: CommentItem[];
 }
 
 export interface Service {

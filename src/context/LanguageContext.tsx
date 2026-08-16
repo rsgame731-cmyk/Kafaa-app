@@ -13,6 +13,7 @@ const translations: Record<Language, Record<string, string>> = {
     brand_tagline: "Your professional world, built for Algeria.",
     get_started: "Get Started",
     sign_in: "Sign In",
+    create_account: "Create an Account",
     good_evening: "Good evening",
     looking_for_opps: "Looking for new opportunities",
     home: "Home",
@@ -46,12 +47,32 @@ const translations: Record<Language, Record<string, string>> = {
     language: "Language",
     english: "English",
     french: "Français",
-    arabic: "العربية (RTL)"
+    arabic: "العربية (RTL)",
+    profile_strength: "Profile Strength",
+    view: "View",
+    comments: "Comments",
+    repost: "Repost",
+    like: "Like",
+    saved: "Saved",
+    share: "Share",
+    send: "Send",
+    back: "Back",
+    continue: "Continue",
+    step: "Step",
+    of: "of",
+    password: "Password",
+    email: "Email",
+    first_name: "First Name",
+    last_name: "Last Name",
+    specialization: "Specialization",
+    city: "City / Commune",
+    sign_out: "Sign Out"
   },
   fr: {
     brand_tagline: "Votre monde professionnel, conçu pour l'Algérie.",
     get_started: "Commencer",
     sign_in: "Se connecter",
+    create_account: "Créer un compte",
     good_evening: "Bonsoir",
     looking_for_opps: "À la recherche de nouvelles opportunités",
     home: "Accueil",
@@ -85,12 +106,32 @@ const translations: Record<Language, Record<string, string>> = {
     language: "Langue",
     english: "English",
     french: "Français",
-    arabic: "العربية (RTL)"
+    arabic: "العربية (RTL)",
+    profile_strength: "Niveau du profil",
+    view: "Voir",
+    comments: "Commentaires",
+    repost: "Republier",
+    like: "J'aime",
+    saved: "Enregistré",
+    share: "Partager",
+    send: "Envoyer",
+    back: "Retour",
+    continue: "Continuer",
+    step: "Étape",
+    of: "sur",
+    password: "Mot de passe",
+    email: "E-mail",
+    first_name: "Prénom",
+    last_name: "Nom",
+    specialization: "Spécialisation",
+    city: "Ville / Commune",
+    sign_out: "Déconnexion"
   },
   ar: {
     brand_tagline: "عالمك المهني، مصمم خصيصاً للجزائر.",
     get_started: "ابدأ الآن",
     sign_in: "تسجيل الدخول",
+    create_account: "إنشاء حساب جديد",
     good_evening: "مساء الخير",
     looking_for_opps: "أبحث عن فرص عمل جديدة",
     home: "الرئيسية",
@@ -124,14 +165,40 @@ const translations: Record<Language, Record<string, string>> = {
     language: "اللغة",
     english: "English",
     french: "Français",
-    arabic: "العربية (RTL)"
+    arabic: "العربية (RTL)",
+    profile_strength: "قوة الملف الشخصي",
+    view: "عرض",
+    comments: "التعليقات",
+    repost: "إعادة نشر",
+    like: "إعجاب",
+    saved: "محفوظ",
+    share: "مشاركة",
+    send: "إرسال",
+    back: "رجوع",
+    continue: "متابعة",
+    step: "الخطوة",
+    of: "من",
+    password: "كلمة المرور",
+    email: "البريد الإلكتروني",
+    first_name: "الاسم الأول",
+    last_name: "اسم العائلة",
+    specialization: "التخصص المهني",
+    city: "المدينة / البلدية",
+    sign_out: "تسجيل الخروج"
   }
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguageState] = useState<Language>(() => {
+    return (localStorage.getItem('kafaa_lang') as Language) || 'en';
+  });
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem('kafaa_lang', lang);
+  };
 
   useEffect(() => {
     const isRtl = language === 'ar';
@@ -159,3 +226,4 @@ export const useLanguage = () => {
   };
   return context;
 };
+

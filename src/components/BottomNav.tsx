@@ -5,7 +5,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { NavTab } from '../types';
 
 export const BottomNav: React.FC = () => {
-  const { activeTab, setActiveTab, setIsCreateModalOpen } = useApp();
+  const { activeTab, setActiveTab, setIsCreateModalOpen, deviceViewMode } = useApp();
   const { t } = useLanguage();
 
   const items: { id: NavTab; labelKey: string; icon: React.ReactNode }[] = [
@@ -18,37 +18,55 @@ export const BottomNav: React.FC = () => {
 
   const handleNav = (id: NavTab) => {
     if (id === 'create') {
-      setIsCreateModalOpen(true);
+      // Step 1 of Create Flow: Navigate to Create selection screen first
+      setActiveTab('create');
+      setIsCreateModalOpen(false);
     } else {
       setActiveTab(id);
     }
   };
 
-  // Hide bottom nav on splash/onboarding if desired
   if (activeTab === 'welcome' || activeTab === 'onboarding') {
     return null;
   }
 
+  // Handle position based on deviceViewMode (mobile preview frame vs full screen)
+  const containerClass = deviceViewMode === 'mobile'
+    ? 'absolute bottom-2 left-2 right-2 z-40'
+    : 'fixed bottom-3 left-0 right-0 z-40 max-w-md mx-auto px-4';
+
   return (
-    <div className="fixed bottom-3 left-0 right-0 z-40 max-w-md mx-auto px-4">
+    <div className={containerClass}>
       <nav className="bg-brand-surface/95 backdrop-blur-md border border-brand-border/80 rounded-nav p-2 shadow-elevated flex items-center justify-around">
         {items.map((item) => {
           const isActive = activeTab === item.id;
+          const isCreateBtn = item.id === 'create';
+
           return (
             <button
               key={item.id}
               onClick={() => handleNav(item.id)}
-              className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-full transition-all duration-200 ${
-                isActive ? 'text-brand-bronze scale-105' : 'text-brand-muted hover:text-brand-cream'
+              className={`flex flex-col items-center justify-center py-1.5 px-3 rounded-full transition-all duration-300 ease-out relative select-none ${
+                isCreateBtn
+                  ? 'active:scale-90 transition-transform duration-150'
+                  : 'btn-press'
               }`}
             >
-              <div className="relative">
+              {/* Icon Container with Floating Elevation Effect */}
+              <div className={`relative flex items-center justify-center transition-all duration-300 ${
+                isActive
+                  ? '-translate-y-1.5 scale-115 text-brand-bronze shadow-bronze-glow'
+                  : 'translate-y-0 scale-100 text-brand-muted opacity-65 hover:opacity-100 hover:text-brand-cream'
+              }`}>
                 {item.icon}
-                {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-brand-bronze rounded-full" />
-                )}
               </div>
-              <span className="text-[10px] tracking-tight mt-1 font-medium">
+
+              {/* Label text */}
+              <span className={`text-[10px] tracking-tight mt-0.5 font-medium transition-all duration-300 ${
+                isActive
+                  ? 'text-brand-bronze font-semibold scale-105'
+                  : 'text-brand-muted/80 opacity-70'
+              } ${isCreateBtn && !isActive ? 'text-brand-bronze/90' : ''}`}>
                 {t(item.labelKey)}
               </span>
             </button>
@@ -58,3 +76,5 @@ export const BottomNav: React.FC = () => {
     </div>
   );
 };
+
+

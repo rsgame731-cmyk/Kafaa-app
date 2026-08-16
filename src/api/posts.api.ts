@@ -17,5 +17,17 @@ export const postsApi = {
     return apiClient.request(`/posts/${postId}/like`, {
       method: 'POST'
     });
+  },
+
+  getComments: async (postId: string) => {
+    return apiClient.request(`/posts/${postId}/comments`);
+  },
+
+  addComment: async (postId: string, content: string) => {
+    return apiClient.request(`/posts/${postId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ content })
+    });
   }
 };
+

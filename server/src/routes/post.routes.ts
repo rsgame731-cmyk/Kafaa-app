@@ -121,4 +121,75 @@ router.post('/:id/like', authenticateJWT, async (req: AuthenticatedRequest, res:
   }
 });
 
+// 4. GET COMMENTS FOR A POST
+router.get('/:id/comments', async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const comments = await prisma.comment.findMany({
+      where: { postId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        author: {
+          select: {
+            id: true,
+            verified: true,
+            profile: {
+              select: {
+                fullName: true,
+                headline: true,
+                avatarUrl: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return res.json({ status: 'success', data: comments });
+  } catch (error) {
+    return res.status(500).json({ status: 'error', message: 'Failed to fetch comments' });
+  }
+});
+
+// 5. POST A COMMENT
+router.post('/:id/comments', authenticateJWT, async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const postId = req.params.id;
+    const { content } = req.body;
+    const authorId = req.user!.userId;
+
+    if (!content || typeof content !== 'string' || !content.trim()) {
+      return res.status(400).json({ status: 'error', message: 'Comment content cannot be empty' });
+    }
+
+    const newComment = await prisma.comment.create({
+      data: {
+        postId,
+        authorId,
+        content: content.trim()
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            verified: true,
+            profile: {
+              select: {
+                fullName: true,
+                headline: true,
+                avatarUrl: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    return res.status(201).json({ status: 'success', data: newComment });
+  } catch (error) {
+    return res.status(500).json({ status: 'error', message: 'Failed to create comment' });
+  }
+});
+
 export default router;
+

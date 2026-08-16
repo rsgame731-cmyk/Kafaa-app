@@ -1,8 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { supabaseAdmin } from '../config/supabase';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Liveness check
 router.get('/', (req: Request, res: Response) => {
@@ -12,7 +11,8 @@ router.get('/', (req: Request, res: Response) => {
 // Readiness check (Database check)
 router.get('/ready', async (req: Request, res: Response) => {
   try {
-    await prisma.$queryRaw`SELECT 1`;
+    const { data, error } = await supabaseAdmin.from('users').select('id').limit(1);
+    if (error) throw error;
     return res.json({ status: 'ready', database: 'connected', timestamp: new Date().toISOString() });
   } catch (error) {
     return res.status(503).json({ status: 'unhealthy', database: 'disconnected' });

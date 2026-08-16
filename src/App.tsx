@@ -3,6 +3,7 @@ import { AppProvider, useApp } from './context/AppContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { Header } from './components/Header';
 import { BottomNav } from './components/BottomNav';
+import { SplashScreen } from './components/SplashScreen';
 
 // Import Views
 import { WelcomeView } from './views/WelcomeView';
@@ -73,7 +74,11 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
 }
 
 const MainContent: React.FC = () => {
-  const { activeTab, deviceViewMode } = useApp();
+  const { activeTab, deviceViewMode, isSplashActive } = useApp();
+
+  if (isSplashActive) {
+    return <SplashScreen />;
+  }
 
   const renderActiveView = () => {
     switch (activeTab) {
@@ -120,22 +125,38 @@ const MainContent: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-brand-dark text-brand-cream selection:bg-brand-bronze selection:text-brand-dark">
-      <Header />
-      <main className="w-full">
-        {deviceViewMode === 'mobile' ? (
-          <div className="py-6 px-2 flex justify-center bg-[#0a0a0c]">
-            <div className="w-full max-w-[390px] min-h-[844px] bg-brand-dark border-4 border-brand-border/80 rounded-[40px] shadow-2xl overflow-hidden relative pb-12 my-2">
-              <div className="w-28 h-4 bg-brand-surface rounded-b-xl mx-auto mb-2 border-b border-brand-border/40" />
-              {renderActiveView()}
+      {deviceViewMode === 'mobile' ? (
+        <div className="py-8 px-2 flex flex-col items-center justify-center bg-[#07080a] min-h-screen">
+          <div className="text-center mb-3">
+            <span className="text-[11px] font-mono text-brand-muted uppercase tracking-widest">Mobile Viewframe Simulation (390 × 844)</span>
+          </div>
+          <div className="w-[390px] h-[844px] bg-brand-dark border-[6px] border-[#22242a] rounded-[48px] shadow-elevated overflow-hidden relative flex flex-col my-auto border-t-8">
+            {/* Phone Notch / Speaker Island */}
+            <div className="w-32 h-5 bg-[#141518] rounded-b-2xl mx-auto flex items-center justify-center border-b border-brand-border/40 shrink-0 z-40">
+              <div className="w-12 h-1 bg-brand-border rounded-full" />
             </div>
+
+            {/* Header within Mobile Container */}
+            <Header />
+
+            {/* Scrollable View Area */}
+            <main key={activeTab} className="flex-1 overflow-y-auto pb-20 animate-view-transition">
+              {renderActiveView()}
+            </main>
+
+            {/* Bottom Nav within Mobile Container */}
+            <BottomNav />
           </div>
-        ) : (
-          <div className="max-w-4xl mx-auto">
+        </div>
+      ) : (
+        <>
+          <Header />
+          <main key={activeTab} className="w-full max-w-4xl mx-auto animate-view-transition">
             {renderActiveView()}
-          </div>
-        )}
-      </main>
-      <BottomNav />
+          </main>
+          <BottomNav />
+        </>
+      )}
     </div>
   );
 };
@@ -151,3 +172,4 @@ export const App: React.FC = () => {
     </ErrorBoundary>
   );
 };
+

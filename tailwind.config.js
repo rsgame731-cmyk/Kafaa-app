@@ -26,8 +26,8 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Inter', 'Tajawal', 'Cairo', 'sans-serif'],
-        arabic: ['Tajawal', 'Cairo', 'sans-serif']
+        sans: ['Plus Jakarta Sans', 'Tajawal', 'Inter', 'sans-serif'],
+        arabic: ['Tajawal', 'Plus Jakarta Sans', 'sans-serif']
       },
       borderRadius: {
         'card': '18px',

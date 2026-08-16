@@ -258,7 +258,7 @@ export const MOCK_COMPANIES: Company[] = [
   }
 ];
 
-export const MOCK_POSTS: Post[] = [
+export const MOCK_POSTS_EN: Post[] = [
   {
     id: "post_1",
     authorId: "usr_karim_b",
@@ -309,6 +309,60 @@ export const MOCK_POSTS: Post[] = [
     isSaved: false
   }
 ];
+
+export const MOCK_POSTS_AR: Post[] = [
+  {
+    id: "post_1",
+    authorId: "usr_karim_b",
+    authorName: "كريم ابراهيمي",
+    authorTitle: "باحث في الذكاء الاصطناعي @ CDTA · الجزائر",
+    authorAvatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80",
+    authorWilaya: "الجزائر",
+    authorVerified: true,
+    content: "أطلقنا للتو مجموعة بيانات مفتوحة المصدر لضبط النماذج اللغوية الكبيرة باللغة العربية والدارجة الجزائرية. متحمس لرؤية المطورين الجزائريين يبنون تطبيقات ذكاء اصطناعي محلي فوقها! 🇩🇿⚡",
+    likesCount: 142,
+    commentsCount: 38,
+    repostsCount: 19,
+    postedAt: "منذ 3 ساعات",
+    isLiked: false,
+    isSaved: true
+  },
+  {
+    id: "post_2",
+    authorId: "usr_sara_b",
+    authorName: "سارة بن موسى",
+    authorTitle: "كبيرة مصممي واجهات المستخدم @ TechDz · وهران",
+    authorAvatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=200&q=80",
+    authorWilaya: "وهران",
+    authorVerified: true,
+    content: "التصميم البسيط لا يعني وضع محتوى أقل، بل إتاحة المساحة لما يهم بحق. إليكم لمحة عن هوية التصميم الداكنة الجديدة المصممة للأدوات المهنية الجزائرية مع لمسات النحاس الدافئة.",
+    image: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80",
+    likesCount: 289,
+    commentsCount: 64,
+    repostsCount: 41,
+    postedAt: "منذ 6 ساعات",
+    isLiked: true,
+    isSaved: false
+  },
+  {
+    id: "post_3",
+    authorId: "usr_yassine_k",
+    authorName: "ياسين قاسمي",
+    authorTitle: "مؤسس مشارك @ DzStartups · قسنطينة",
+    authorAvatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
+    authorWilaya: "قسنطينة",
+    authorVerified: false,
+    content: "أخبار رائعة لمنظومة المؤسسات الناشئة الجزائرية! نستضيف مسابقة عروض المطورين القادمة في قسنطينة الشهر المقبل. تمويل بقيمة 2,000,000 دج للمهندسين الشباب.",
+    likesCount: 410,
+    commentsCount: 92,
+    repostsCount: 85,
+    postedAt: "منذ يوم",
+    isLiked: false,
+    isSaved: false
+  }
+];
+
+export const MOCK_POSTS: Post[] = MOCK_POSTS_EN;
 
 export const MOCK_SERVICES: Service[] = [
   {
