@@ -111,8 +111,8 @@ io.on('connection', (socket) => {
 });
 
 // Start Server
-const PORT = env.PORT;
-server.listen(PORT, () => {
+const PORT = Number(env.PORT) || 4000;
+server.listen(PORT, '0.0.0.0', () => {
   logger.info(`🚀 Kafa'a Production Server with Supabase Storage running safely on port ${PORT}`);
 });
 
